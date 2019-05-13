@@ -10,22 +10,22 @@ from broker.utils import (
 )
 
 
-class ThingparkEndpoint(EndpointProvider):
-    description = 'Receive HTTP POST requests from Actility Thingpark system'
+class TheThingsEndpoint(EndpointProvider):
+    description = 'Receive HTTP POST requests from The Things Network LoRaWAN system'
 
     def handle_request(self, request):
         if request.method != 'POST':
             return HttpResponse('Only POST with JSON body is allowed', status=405)
         serialised_request = serialize_django_request(request)
-        devid = 'ttn-unknown'
+        ok, body = decode_json_body(serialised_request['request.body'])
+        if ok is False:
+            return HttpResponse(f'JSON ERROR: {body}', status=400, content_type='text/plain')
+        devid = body.get('hardware_serial', 'ttn-unknown')
         serialised_request['devid'] = devid
         serialised_request['time'] = datetime.datetime.utcnow().isoformat() + 'Z'
         message = data_pack(serialised_request)
         key = create_routing_key('thethings', devid)
         send_message(settings.RAW_HTTP_EXCHANGE, key, message)
-        ok, body = decode_json_body(serialised_request['request.body'])
-        if ok is False:
-            return HttpResponse(f'JSON ERROR: {body}', status=400, content_type='text/plain')
         # uplink = body.get('DevEUI_uplink')
         # if uplink is not None:
         #     datalogger, created = get_datalogger(devid=devid, update_activity=True)
