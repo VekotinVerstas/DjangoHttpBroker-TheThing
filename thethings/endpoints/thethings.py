@@ -20,16 +20,14 @@ class TheThingsEndpoint(EndpointProvider):
         ok, body = decode_json_body(serialised_request['request.body'])
         if ok is False:
             return HttpResponse(f'JSON ERROR: {body}', status=400, content_type='text/plain')
-        devid = body.get('hardware_serial', 'ttn-unknown')
-        serialised_request['devid'] = devid
-        serialised_request['time'] = datetime.datetime.utcnow().isoformat() + 'Z'
-        message = data_pack(serialised_request)
-        key = create_routing_key('thethings', devid)
-        send_message(settings.RAW_HTTP_EXCHANGE, key, message)
-        # uplink = body.get('DevEUI_uplink')
-        # if uplink is not None:
-        #     datalogger, created = get_datalogger(devid=devid, update_activity=True)
-        #     if devid is not None:
-        #         pass
-        #         # process_data.delay(devid, serialised_request)
+        devid = body.get('hardware_serial')
+        if devid is not None:
+            serialised_request['devid'] = devid
+            serialised_request['time'] = datetime.datetime.utcnow().isoformat() + 'Z'
+            message = data_pack(serialised_request)
+            key = create_routing_key('thethings', devid)
+            send_message(settings.RAW_HTTP_EXCHANGE, key, message)
+            datalogger, created = get_datalogger(devid=devid, update_activity=True)
+        else:
+            devid = 'ttn-unknown'
         return HttpResponse('OK', content_type='text/plain')
