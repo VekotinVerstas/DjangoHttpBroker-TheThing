@@ -8,7 +8,6 @@ from django.conf import settings
 from influxdb.exceptions import InfluxDBClientError
 
 from broker.management.commands import RabbitCommand
-from thethings.utils import create_influxdb_obj, get_influxdb_client
 
 from broker.utils import (
     create_dataline, create_parsed_data_message,
