@@ -5,11 +5,8 @@ import logging
 import pytz
 from dateutil.parser import parse
 from django.conf import settings
-from influxdb.exceptions import InfluxDBClientError
 
 from broker.management.commands import RabbitCommand
-from thethings.utils import create_influxdb_obj, get_influxdb_client
-
 from broker.utils import (
     create_dataline, create_parsed_data_message,
     data_pack, data_unpack,
@@ -41,8 +38,19 @@ def parse_thethings_request(serialised_request, data):
     datalines = [dataline]
     message = create_parsed_data_message(devid, datalines=datalines)
     packed_message = data_pack(message)
-    logger.debug(f'exchange={settings.PARSED_DATA_EXCHANGE} key={key}  packed_message={packed_message}')
-    send_message(settings.PARSED_DATA_EXCHANGE, key, packed_message)
+
+    exchange = settings.PARSED_DATA_HEADERS_EXCHANGE
+    logger.debug(f'exchange={exchange} key={key}  packed_message={packed_message}')
+    config = {}
+    # TODO: implement and use get_datalogger_config()
+    if datalogger.application:
+        config = json.loads(datalogger.application.config)
+    # TODO: get influxdb variables from Application / Datalogger / Forward etc config
+    headers = {
+        'influxdb': '1'
+    }
+    headers.update(config)
+    send_message(exchange, '', packed_message, headers=headers)
     return True
 
 
